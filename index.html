@@ -27,6 +27,16 @@
     color: #3a3936;
   }
   .instructions strong { font-weight: 600; }
+  .priority-banner {
+    background: #fdf0e3;
+    border: 1.5px solid #e8b06d;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 0.75rem;
+    font-size: 14px;
+    color: #7a4a12;
+  }
+  .priority-banner strong { font-weight: 700; }
 
   .section-header {
     font-size: 12px;
@@ -126,6 +136,29 @@
     border-radius: 4px;
     letter-spacing: 0.03em;
   }
+  .laborday-tag {
+    font-size: 10px;
+    font-weight: 700;
+    color: #1f5c8a;
+    background: #cfe6f7;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.03em;
+  }
+  .date-row.kickoff-row {
+    background: #fdecec;
+    border-color: #e8a5a5;
+    cursor: default;
+  }
+  .kickoff-tag {
+    font-size: 10px;
+    font-weight: 700;
+    color: #a32d2d;
+    background: #f6c6c6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.03em;
+  }
 
   /* ===== CALENDAR VIEW ===== */
   #calendarView { display: none; margin-bottom: 1rem; }
@@ -185,11 +218,30 @@
     font-weight: 700;
   }
   .cal-cell.kickoff {
-    background: repeating-linear-gradient(45deg, #f5f4f0, #f5f4f0 4px, #ece9df 4px, #ece9df 8px);
-    color: #b0aea5;
-    border: 1px dashed #c9c6b8;
+    background: #fdecec;
+    color: #a32d2d;
+    border: 1.5px solid #e8a5a5;
     cursor: not-allowed;
+    font-weight: 700;
+    flex-direction: column;
+    line-height: 1.1;
   }
+  .cal-cell.kickoff .nfl-label {
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+  }
+  .cal-cell .ld-dot {
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #2e7cb8;
+  }
+  .cal-cell.selected .ld-dot { background: #fff; }
   .cal-legend {
     display: flex;
     gap: 14px;
@@ -275,8 +327,13 @@
   <h1>🏈 Fantasy League Poll</h1>
   <p class="sub">3 quick things: draft date, platform, keepers</p>
 
+  <div class="priority-banner">
+    🚨 <strong>Top priority: we draft together, in person.</strong> Only check dates you can actually show up.
+  </div>
+
   <div class="instructions">
-    Three votes for the group — draft date, platform, and keeper format. Takes under a minute.
+    Three votes for the group — draft date, platform, and keeper format. Takes under a minute.<br><br>
+    <strong>Buy-in this year: $500.</strong> The NFL season kicks off <strong>Wed, Sept 9</strong> (Pats @ Seahawks), so the draft has to happen before then. These answers lock in the draft date, the beer mile, and the rest of the season's settings.
   </div>
 
   <div id="confirmation" class="confirmation">
@@ -285,8 +342,9 @@
 
   <form id="pollForm">
     <div class="name-field">
-      <label for="name">Your name</label>
+      <label for="name">Who are you?</label>
       <input type="text" id="name" name="name" placeholder="Type your name" required>
+      <div id="nameChoices" class="choice-group" style="display:none;"></div>
     </div>
 
     <!-- SECTION 1: DRAFT DATE -->
@@ -305,13 +363,14 @@
     <div id="calendarView">
       <div id="calendarMonths"></div>
       <div class="cal-legend">
-        <span><span class="legend-dot" style="background:#f5f4f0;border:1px solid #e3e0d5;"></span> Weekday</span>
         <span><span class="legend-dot" style="background:#fbf9f2;border:1px solid #e8dfc4;"></span> Weekend</span>
+        <span><span class="legend-dot" style="background:#fbf9f2;border:1px solid #2e7cb8;"></span> Labor Day</span>
+        <span><span class="legend-dot" style="background:#fdecec;border:1px solid #e8a5a5;"></span> Sept 9 kickoff</span>
         <span><span class="legend-dot" style="background:#534AB7;"></span> Selected</span>
       </div>
     </div>
 
-    <p class="kickoff-note">Season opener is Wed, Sept 9 — draft needs to happen before then</p>
+    <p class="kickoff-note">🏈 NFL season kicks off Wed, Sept 9 (Pats @ Seahawks) — the draft has to happen before then</p>
 
     <!-- SECTION 2: PLATFORM -->
     <div class="section-header">2 · Platform</div>
@@ -374,7 +433,8 @@
   // ---- Shared date range: Aug 20 – Sept 8, 2026 ----
   const startDate = new Date(2026, 7, 20); // Aug 20, 2026
   const endDate   = new Date(2026, 8, 8);  // Sept 8, 2026
-  const kickoffDate = new Date(2026, 8, 9); // Sept 9, 2026 (shown grayed out on calendar for context)
+  const kickoffDate = new Date(2026, 8, 9); // Wed Sept 9, 2026 — NFL kickoff (Pats @ Seahawks)
+  const laborDay = new Date(2026, 8, 7);   // Mon Sept 7, 2026 — treated as holiday weekend
   const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const dowShort = ['S','M','T','W','T','F','S'];
   const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -389,7 +449,8 @@
   let cur = new Date(startDate);
   while (cur <= endDate) {
     const iso = isoOf(cur);
-    const weekend = isWeekendDay(cur);
+    const isLD = cur.getTime() === laborDay.getTime();
+    const weekend = isWeekendDay(cur) || isLD; // Labor Day rides with the weekend
     const dayName = dayNames[cur.getDay()];
     const monthName = monthNames[cur.getMonth()];
     const dateNum = cur.getDate();
@@ -401,7 +462,7 @@
       <input type="checkbox" id="date_${iso}">
       <label class="date-label">
         <span><span class="date-day">${dayName}</span> <span class="date-full">${monthName} ${dateNum}</span></span>
-        ${weekend ? '<span class="weekend-tag">WEEKEND</span>' : ''}
+        ${isLD ? '<span class="laborday-tag">LABOR DAY 🇺🇸</span>' : weekend ? '<span class="weekend-tag">WEEKEND</span>' : ''}
       </label>
     `;
     row.addEventListener('click', () => toggleDate(iso));
@@ -409,6 +470,18 @@
 
     cur.setDate(cur.getDate() + 1);
   }
+
+  // Season kickoff marker at the end of the list — context, not selectable.
+  const kickoffRow = document.createElement('div');
+  kickoffRow.className = 'date-row kickoff-row';
+  kickoffRow.innerHTML = `
+    <span style="font-size:18px;">🏈</span>
+    <label class="date-label">
+      <span><span class="date-day">Wed</span> <span class="date-full">Sep 9 — Pats @ Seahawks</span></span>
+      <span class="kickoff-tag">SEASON KICKOFF</span>
+    </label>
+  `;
+  dateList.appendChild(kickoffRow);
 
   // ---- Build CALENDAR VIEW ----
   const calendarMonths = document.getElementById('calendarMonths');
@@ -453,11 +526,17 @@
 
       if (isKickoff) {
         cell.className = 'cal-cell kickoff';
-        cell.title = 'Season opener — not selectable';
+        cell.title = 'NFL season kickoff — Pats @ Seahawks. Draft must happen before this.';
+        cell.innerHTML = `${d}<span class="nfl-label">KICKOFF</span>`;
       } else if (inRange) {
-        const weekend = isWeekendDay(thisDate);
+        const isLD = thisDate.getTime() === laborDay.getTime();
+        const weekend = isWeekendDay(thisDate) || isLD;
         cell.className = 'cal-cell selectable' + (weekend ? ' weekend' : '');
         cell.dataset.iso = iso;
+        if (isLD) {
+          cell.title = 'Labor Day';
+          cell.innerHTML = `${d}<span class="ld-dot"></span>`;
+        }
         cell.addEventListener('click', () => toggleDate(iso));
       } else {
         cell.className = 'cal-cell empty';
@@ -530,14 +609,69 @@
     });
   }
 
+  // ---- League roster: pick-your-name instead of free typing ----
+  const LEAGUE_MEMBERS = ['Spyro','Liam','Quentin','Geb','TJ','Parker','Harvey','Tirdad','Jamie','Morse','Newhouse','Will'];
+  let pickedName = null;
+  const nameInput = document.getElementById('name');
+  const nameChoices = document.getElementById('nameChoices');
+  if (LEAGUE_MEMBERS.length) {
+    nameInput.style.display = 'none';
+    nameInput.required = false;
+    nameChoices.style.display = 'flex';
+    LEAGUE_MEMBERS.forEach(n => {
+      const row = document.createElement('div');
+      row.className = 'choice-row';
+      row.innerHTML = `<input type="radio" name="name_radio"><span>${n}</span>`;
+      row.addEventListener('click', () => {
+        pickedName = n;
+        nameChoices.querySelectorAll('.choice-row').forEach(r => {
+          const on = r === row;
+          r.classList.toggle('selected', on);
+          r.querySelector('input').checked = on;
+        });
+      });
+      nameChoices.appendChild(row);
+    });
+  }
+
+  // ---- One submission per device (soft lock — clearable, so borrowed
+  //      phones and re-dos aren't bricked; duplicates are also easy to
+  //      spot in the responses since names come from the fixed list) ----
+  const VOTE_KEY = 'ffpoll2026_voted';
+  function lockDevice(info) {
+    const confirmEl = document.getElementById('confirmation');
+    document.getElementById('pollForm').style.display = 'none';
+    confirmEl.style.display = 'block';
+    confirmEl.style.background = '#eaf3de';
+    confirmEl.style.borderColor = '#b8d492';
+    confirmEl.style.color = '#3b6d11';
+    confirmEl.innerHTML = `✓ <strong>${info.name}</strong> already voted from this phone. `
+      + `<a href="#" id="revoteLink" style="color:#3b6d11;">Not you, or need to change an answer? Tap here.</a>`;
+    document.getElementById('revoteLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem(VOTE_KEY);
+      document.getElementById('pollForm').style.display = 'block';
+      confirmEl.style.display = 'none';
+      window.scrollTo({top: 0});
+    });
+  }
+  try {
+    const prior = localStorage.getItem(VOTE_KEY);
+    if (prior) lockDevice(JSON.parse(prior));
+  } catch (err) { /* storage unavailable — fall through to normal form */ }
+
   // ---- Submit: posts to Formspree via fetch, no page navigation ----
   const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xljrjkqa';
 
   document.getElementById('pollForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    const name = document.getElementById('name').value;
+    const name = LEAGUE_MEMBERS.length ? pickedName : document.getElementById('name').value;
     const notes = document.getElementById('notes').value;
 
+    if (!name) {
+      alert('Pick your name at the top first.');
+      return;
+    }
     if (selected.size === 0) {
       alert('Please select at least one date you\'re available.');
       return;
@@ -598,6 +732,10 @@
       confirmEl.style.borderColor = '#b8d492';
       confirmEl.style.color = '#3b6d11';
       confirmEl.innerHTML = `✓ Thanks ${name}! Your votes were submitted.`;
+      try {
+        localStorage.setItem(VOTE_KEY, JSON.stringify({ name, at: Date.now() }));
+      } catch (err) { /* storage unavailable — no lock, still submitted */ }
+      document.getElementById('pollForm').style.display = 'none';
     } else {
       let summary = `${name}'s votes:\n\nAvailability:\n${formatted.join('\n')}`;
       summary += `\n\nPlatform: ${choices.platform}`;
