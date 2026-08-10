@@ -439,7 +439,11 @@
   const dowShort = ['S','M','T','W','T','F','S'];
   const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-  function isoOf(d) { return d.toISOString().split('T')[0]; }
+  // Local-date key (NOT toISOString, which converts to UTC and shifts the
+  // date a day early for anyone in a UTC+ timezone).
+  function isoOf(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
   function isWeekendDay(d) { const dow = d.getDay(); return dow === 0 || dow === 5 || dow === 6; }
 
   const selected = new Set();
