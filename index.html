@@ -114,11 +114,13 @@
     background: #b3261e; border-color: #b3261e; color: #fff;
   }
   .cal-cell .mark { font-size: 11px; line-height: 1; margin-top: 1px; }
+  /* Labor Day marker: a dot, so it never collides with the ✓/✗ glyph. */
+  .cal-cell.has-ld { padding-bottom: 7px; }
   .cal-cell .ld {
-    position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
-    font-size: 7px; font-weight: 800; letter-spacing: .02em; color: #2e7cb8;
+    position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+    width: 5px; height: 5px; border-radius: 50%; background: #2e7cb8;
   }
-  .cal-cell.state-yes .ld, .cal-cell.state-no .ld { color: rgba(255,255,255,.85); }
+  .cal-cell.state-yes .ld, .cal-cell.state-no .ld { background: rgba(255,255,255,.9); }
 
   .cal-cell.kickoff {
     background: #fdecec; color: #a32d2d; border: 1.5px dashed #e8a5a5;
@@ -160,10 +162,12 @@
   <p class="sub">One question. Takes 30 seconds.</p>
 
   <div class="callout">
+    <b>Everyone needs to redo this</b> — round 1 answers don't carry over,
+    even if you already filled it out.<br><br>
     Tap each day to cycle: <b>✓ can make it</b> → <b>✗ can't</b> → blank.<br><br>
-    <b>Mark every single day.</b> Last round we had to guess on blanks and
-    got it wrong twice. If a day is a hard no, say so — that's more useful
-    than leaving it empty.
+    <b>Mark every single day.</b> Last round we had to guess on the blanks
+    and got it wrong twice. If a day is a hard no, say so — that's far more
+    useful than leaving it empty.
   </div>
 
   <div id="confirmation" class="confirmation"></div>
@@ -178,6 +182,7 @@
       <span><span class="legend-dot" style="background:#217a3a;"></span> Can make it</span>
       <span><span class="legend-dot" style="background:#b3261e;"></span> Can't</span>
       <span><span class="legend-dot" style="background:#faf9f5;border:1.5px solid #ddd9cc;"></span> Not answered</span>
+      <span><span class="legend-dot" style="background:#2e7cb8;border-radius:50%;width:7px;height:7px;"></span> Labor Day (Sep 7)</span>
     </div>
 
     <div class="counter" id="counter"></div>
@@ -272,10 +277,11 @@
         cell.innerHTML = `${d}<span class="mark">KICKOFF</span>`;
         cell.title = 'NFL season opener — draft must be before this';
       } else if (date >= startDate && date <= endDate) {
-        cell.className = 'cal-cell pick' + (isWeekendDay(date) ? ' weekend' : '');
-        cell.dataset.iso = iso;
         const isLD = date.getTime() === laborDay.getTime();
-        cell.innerHTML = `${d}<span class="mark"></span>` + (isLD ? '<span class="ld">LABOR DAY</span>' : '');
+        cell.className = 'cal-cell pick' + (isWeekendDay(date) ? ' weekend' : '') + (isLD ? ' has-ld' : '');
+        cell.dataset.iso = iso;
+        if (isLD) cell.title = 'Labor Day';
+        cell.innerHTML = `${d}<span class="mark"></span>` + (isLD ? '<span class="ld"></span>' : '');
         cell.addEventListener('click', () => cycle(iso));
       } else {
         cell.className = 'cal-cell out';
