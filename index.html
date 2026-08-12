@@ -113,14 +113,16 @@
   .cal-cell.pick.state-no {
     background: #b3261e; border-color: #b3261e; color: #fff;
   }
-  .cal-cell .mark { font-size: 11px; line-height: 1; margin-top: 1px; }
-  /* Labor Day marker: a dot, so it never collides with the ✓/✗ glyph. */
-  .cal-cell.has-ld { padding-bottom: 7px; }
+  .cal-cell .mark { font-size: 10px; line-height: 1; margin-top: 1px; }
+  /* Labor Day label sits in normal flow under the mark so the two can
+     never overlap (an absolutely-positioned version collided with ✓/✗). */
+  .cal-cell.has-ld { font-size: 13px; }
   .cal-cell .ld {
-    position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
-    width: 5px; height: 5px; border-radius: 50%; background: #2e7cb8;
+    font-size: 6px; font-weight: 800; line-height: 1.1;
+    letter-spacing: -0.02em; color: #2e7cb8; margin-top: 1.5px;
+    white-space: nowrap;
   }
-  .cal-cell.state-yes .ld, .cal-cell.state-no .ld { background: rgba(255,255,255,.9); }
+  .cal-cell.state-yes .ld, .cal-cell.state-no .ld { color: rgba(255,255,255,.92); }
 
   .cal-cell.kickoff {
     background: #fdecec; color: #a32d2d; border: 1.5px dashed #e8a5a5;
@@ -182,7 +184,6 @@
       <span><span class="legend-dot" style="background:#217a3a;"></span> Can make it</span>
       <span><span class="legend-dot" style="background:#b3261e;"></span> Can't</span>
       <span><span class="legend-dot" style="background:#faf9f5;border:1.5px solid #ddd9cc;"></span> Not answered</span>
-      <span><span class="legend-dot" style="background:#2e7cb8;border-radius:50%;width:7px;height:7px;"></span> Labor Day (Sep 7)</span>
     </div>
 
     <div class="counter" id="counter"></div>
@@ -281,7 +282,7 @@
         cell.className = 'cal-cell pick' + (isWeekendDay(date) ? ' weekend' : '') + (isLD ? ' has-ld' : '');
         cell.dataset.iso = iso;
         if (isLD) cell.title = 'Labor Day';
-        cell.innerHTML = `${d}<span class="mark"></span>` + (isLD ? '<span class="ld"></span>' : '');
+        cell.innerHTML = `${d}<span class="mark"></span>` + (isLD ? '<span class="ld">LABOR DAY</span>' : '');
         cell.addEventListener('click', () => cycle(iso));
       } else {
         cell.className = 'cal-cell out';
